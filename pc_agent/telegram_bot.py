@@ -606,6 +606,7 @@ async def close_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             res = subprocess.run(["taskkill", "/PID", str(pid), "/F"], capture_output=True, text=True)
             if res.returncode == 0:
                 await update.message.reply_text(f"✅ Closed PID `{pid}` successfully.", parse_mode="Markdown")
+                system_tools.speak_voice_feedback(f"Closed process {pid} successfully.")
                 return
 
         # Try image-name kill first (add .exe if missing)
@@ -618,6 +619,7 @@ async def close_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         res = subprocess.run(["taskkill", "/IM", proc_name_exe, "/F"], capture_output=True, text=True)
         if res.returncode == 0:
             await update.message.reply_text(f"✅ Closed `{proc_name_exe}` successfully.", parse_mode="Markdown")
+            system_tools.speak_voice_feedback(f"Closed {proc_name_exe} successfully.")
             return
 
         # Collect running processes (Name, Id, MainWindowTitle, CommandLine) via PowerShell
@@ -687,6 +689,7 @@ async def close_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 msg = ''
                 if killed:
                     msg += f"✅ Closed by window-title match: {killed}.\n"
+                    system_tools.speak_voice_feedback(f"Closed {len(killed)} process by window title match.")
                 if failed:
                     msg += f"⚠️ Failed to close: {failed}.\n"
                 await update.message.reply_text(msg or f"⚠️ Could not close processes matching window title '{target}'.")
@@ -719,6 +722,7 @@ async def close_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                 failed.append((pid, str(type(e).__name__)))
                         if killed:
                             await update.message.reply_text(f"✅ Closed UWP host ApplicationFrameHost PIDs: {killed}.")
+                            system_tools.speak_voice_feedback(f"Closed UWP host processes successfully.")
                             return
                         if failed:
                             await update.message.reply_text(f"⚠️ Attempted ApplicationFrameHost close but failed: {failed}.")

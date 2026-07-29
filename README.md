@@ -34,6 +34,12 @@ python build_exe.py
 ```
 Output will be in: `dist/JARVIS_Control_Center/`
 
+After building, the release assets are:
+- `dist/JARVIS_Control_Center/JARVIS_Control_Center.exe`
+- `dist/JARVIS_Control_Center/START_JARVIS.bat`
+
+> Note: PyInstaller also produces `dist/JARVIS_AI_Agent.exe` as the build output before packaging the release folder.
+
 ### ▶️ Run Directly (Python)
 ```bash
 python jarvis_app.py

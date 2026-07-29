@@ -28,6 +28,9 @@ calc_check.txt
 build/
 dist/
 
+# Local helper tools
+gh.exe
+
 # Installer / package temp files
 jarvis_app_payload.zip
 

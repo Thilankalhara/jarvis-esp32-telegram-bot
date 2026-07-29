@@ -2,6 +2,8 @@
 
 > Turn your PC into Tony Stark's J.A.R.V.I.S. Control, automate, wake up, and complete tasks on your home PC from anywhere in the world using AI voice & text commands over Telegram & Tailscale!
 
+> GitHub: https://github.com/Thilankalhara/jarvis-esp32-telegram-bot
+
 ---
 
 ## 💾 Download / Run the EXE
@@ -15,10 +17,10 @@
 | `.env.template` | Copy to `.env` and fill in your credentials |
 
 ### 📥 Direct Download
-- GitHub release asset: `https://github.com/<username>/<repository>/releases/download/v2.1/JARVIS_Control_Center.exe`
-- Installer asset: `https://github.com/<username>/<repository>/releases/download/v2.1/START_JARVIS.bat`
+- GitHub release asset: `https://github.com/Thilankalhara/jarvis-esp32-telegram-bot/releases/download/v2.1/JARVIS_Control_Center.exe`
+- Installer asset: `https://github.com/Thilankalhara/jarvis-esp32-telegram-bot/releases/download/v2.1/START_JARVIS.bat`
 
-> When publishing to GitHub, attach `JARVIS_Control_Center.exe` and `START_JARVIS.bat` as release assets and replace the URLs above with your actual repository release links.
+> When publishing to GitHub, attach `JARVIS_Control_Center.exe` and `START_JARVIS.bat` as release assets and update the release URL version if you publish a newer release.
 
 ### 🔨 Build EXE from Source
 ```bash

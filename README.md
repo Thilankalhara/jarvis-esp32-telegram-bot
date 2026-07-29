@@ -16,11 +16,13 @@
 | `START_JARVIS.bat` | Recommended launcher (checks `.env` first) |
 | `.env.template` | Copy to `.env` and fill in your credentials |
 
-### 📥 Direct Download
-- GitHub release asset: `https://github.com/Thilankalhara/jarvis-esp32-telegram-bot/releases/download/v2.1/JARVIS_Control_Center.exe`
-- Installer asset: `https://github.com/Thilankalhara/jarvis-esp32-telegram-bot/releases/download/v2.1/START_JARVIS.bat`
+### 📥 Release Download
+- GitHub release page: https://github.com/Thilankalhara/jarvis-esp32-telegram-bot/releases
+- After publishing a release, download these assets from the release page:
+  - `JARVIS_Control_Center.exe`
+  - `START_JARVIS.bat`
 
-> When publishing to GitHub, attach `JARVIS_Control_Center.exe` and `START_JARVIS.bat` as release assets and update the release URL version if you publish a newer release.
+> Note: the direct asset URLs only work after a release is published with those files attached. If you haven’t created a release yet, use the release page link above and upload the assets there.
 
 ### 🔨 Build EXE from Source
 ```bash

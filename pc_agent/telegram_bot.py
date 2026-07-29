@@ -628,15 +628,14 @@ async def close_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "$out = foreach($proc in $p){$cmd = ($c | Where-Object { $_.ProcessId -eq $proc.Id }).CommandLine; [PSCustomObject]@{Id=$proc.Id;Name=$proc.ProcessName;MainWindowTitle=$proc.MainWindowTitle;CommandLine=$cmd}};"
                 "$out | ConvertTo-Json -Compress"
             )
-            p = subprocess.run(["powershell", "-NoProfile", "-Command", ps_procs_cmd], capture_output=True, text=True, timeout=8)
-            procs_json = p.stdout.strip()
-            import json, difflib
-            candidates = []
-            if procs_json:
-                data = json.loads(procs_json)
-                if isinstance(data, dict):
-                    data = [data]
-                for item in data:
+                try:
+                    p = subprocess.run(["powershell", "-NoProfile", "-Command", ps_procs_cmd], capture_output=True, text=True, timeout=20)
+                except subprocess.TimeoutExpired:
+                    logger.warning("Process search timed out, retrying with a smaller Get-Process query")
+                    ps_procs_cmd = (
+                        "Get-Process | Select-Object Id,ProcessName,MainWindowTitle | ConvertTo-Json -Compress"
+                    )
+                    p = subprocess.run(["powershell", "-NoProfile", "-Command", ps_procs_cmd], capture_output=True, text=True, timeout=10)
                     name = (item.get('Name') or '')
                     mid = int(item.get('Id') or 0)
                     title = item.get('MainWindowTitle') or ''

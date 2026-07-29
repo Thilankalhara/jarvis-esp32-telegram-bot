@@ -135,7 +135,7 @@ Inside that folder:
    - `ESP32_IP` — your ESP32 local/Tailscale IP
    - `BOT_PASSWORD` — password to secure Telegram access (default: `jarvis123`)
    - `WINDOWS_PC_PASSWORD` — optional, for remote lockscreen unlock
-   - `DEFAULT_WORKSPACE` — default folder for file operations (e.g. `C:\Users\HP\OneDrive\Desktop`)
+   - `DEFAULT_WORKSPACE` — default folder for file operations (leave blank to auto-detect your Desktop folder, e.g. `C:\Users\HP\OneDrive\Desktop`)
    - `ALLOWED_TELEGRAM_USERS` — your numeric Telegram User ID
 2. Run `START_JARVIS.bat` as Administrator.
 3. In the GUI, click **▶ START AGENT**.

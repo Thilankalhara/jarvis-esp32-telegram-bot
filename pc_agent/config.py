@@ -14,6 +14,19 @@ env_path = project_root / ".env"
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
+def _auto_detect_workspace() -> str:
+    desktop_paths = [
+        project_root / ".." / "Desktop",
+        Path.home() / "OneDrive" / "Desktop",
+        Path.home() / "Desktop",
+    ]
+    for path in desktop_paths:
+        resolved = path.expanduser().resolve()
+        if resolved.exists() and resolved.is_dir():
+            return str(resolved)
+    return str(project_root)
+
+
 def reload_config():
     """Reload all environment variables dynamically from .env file."""
     global OPENROUTER_API_KEY, OPENROUTER_MODEL, TELEGRAM_BOT_TOKEN, OPENROUTER_BASE_URL
@@ -38,7 +51,7 @@ def reload_config():
     WINDOWS_PC_PASSWORD = os.getenv("WINDOWS_PC_PASSWORD", "").strip()
     
     _env_workspace = os.getenv("DEFAULT_WORKSPACE", "").strip()
-    DEFAULT_WORKSPACE = _env_workspace if _env_workspace else str(project_root)
+    DEFAULT_WORKSPACE = _env_workspace if _env_workspace else _auto_detect_workspace()
 
 # Initial load
 reload_config()

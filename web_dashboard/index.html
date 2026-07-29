@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.A.R.V.I.S. // Remote PC Command Center</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="hud-container">
+        <!-- Header -->
+        <header class="hud-header">
+            <div class="brand">
+                <div class="arc-reactor-mini"></div>
+                <div>
+                    <h1>J.A.R.V.I.S.</h1>
+                    <span class="subtitle">STARK AUTOMATION NETWORK v4.2</span>
+                </div>
+            </div>
+            <div class="sys-time">
+                <span id="current-time">00:00:00</span>
+                <span id="network-status" class="badge online"><i class="fa-solid fa-signal"></i> TAILSCALE SECURE</span>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Grid -->
+        <main class="dashboard-grid">
+            
+            <!-- Left Panel: System Telemetry -->
+            <section class="card telemetry-card">
+                <h2 class="card-title"><i class="fa-solid fa-microchip"></i> System Telemetry</h2>
+                
+                <div class="metric-group">
+                    <div class="metric-label">
+                        <span>CPU UTILIZATION</span>
+                        <span id="cpu-val">24%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill cpu-bar" style="width: 24%;"></div>
+                    </div>
+                </div>
+
+                <div class="metric-group">
+                    <div class="metric-label">
+                        <span>MEMORY (RAM)</span>
+                        <span id="ram-val">9.4 / 16.0 GB</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill ram-bar" style="width: 58%;"></div>
+                    </div>
+                </div>
+
+                <div class="metric-group">
+                    <div class="metric-label">
+                        <span>STORAGE (SSD)</span>
+                        <span id="disk-val">412 / 512 GB</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill disk-bar" style="width: 80%;"></div>
+                    </div>
+                </div>
+
+                <!-- Node Status Grid -->
+                <div class="node-status-grid">
+                    <div class="node-box active">
+                        <i class="fa-solid fa-server"></i>
+                        <span class="node-name">MAIN WORKSTATION</span>
+                        <span class="node-state">ONLINE</span>
+                    </div>
+                    <div class="node-box active">
+                        <i class="fa-solid fa-microcontroller"></i>
+                        <span class="node-name">ESP32 WOL NODE</span>
+                        <span class="node-state">ACTIVE</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Center Panel: AI Command Console -->
+            <section class="card console-card">
+                <h2 class="card-title"><i class="fa-solid fa-brain"></i> OpenRouter AI Neural Interface</h2>
+                
+                <div class="terminal-window" id="terminal-output">
+                    <div class="log-entry system"><span class="timestamp">[SYSTEM]</span> J.A.R.V.I.S remote core online. Ready for command input...</div>
+                    <div class="log-entry info"><span class="timestamp">[TAILSCALE]</span> Connected to mesh network node PC-WORKSTATION.</div>
+                </div>
+
+                <div class="command-input-group">
+                    <i class="fa-solid fa-terminal input-icon"></i>
+                    <input type="text" id="cmd-input" placeholder="Type AI command (e.g., 'Open VS Code and pull latest git repo')..." autocomplete="off">
+                    <button id="send-btn" class="btn-cyan"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </section>
+
+            <!-- Right Panel: Remote Controls & Actions -->
+            <section class="card control-card">
+                <h2 class="card-title"><i class="fa-solid fa-sliders"></i> Remote Hardware Triggers</h2>
+
+                <div class="quick-actions">
+                    <button class="action-btn wake-btn" onclick="triggerWakePC()">
+                        <i class="fa-solid fa-bolt"></i>
+                        <span>WAKE PC (WOL)</span>
+                    </button>
+                    <button class="action-btn screenshot-btn" onclick="triggerScreenshot()">
+                        <i class="fa-solid fa-camera"></i>
+                        <span>SCREENSHOT</span>
+                    </button>
+                    <button class="action-btn app-btn" onclick="sendQuickCmd('Open VS Code')">
+                        <i class="fa-solid fa-code"></i>
+                        <span>OPEN VS CODE</span>
+                    </button>
+                    <button class="action-btn power-btn" onclick="triggerPower('lock')">
+                        <i class="fa-solid fa-lock"></i>
+                        <span>LOCK PC</span>
+                    </button>
+                    <button class="action-btn power-btn danger" onclick="triggerPower('shutdown')">
+                        <i class="fa-solid fa-power-off"></i>
+                        <span>SHUTDOWN</span>
+                    </button>
+                </div>
+
+                <!-- Desktop Live View Container -->
+                <div class="desktop-preview">
+                    <h3><i class="fa-solid fa-desktop"></i> Desktop Viewfeed</h3>
+                    <div class="preview-frame" id="preview-container">
+                        <div class="placeholder-text"><i class="fa-solid fa-camera-retro"></i> Click Screenshot to fetch desktop feed</div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

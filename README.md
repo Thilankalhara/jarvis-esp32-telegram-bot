@@ -61,29 +61,6 @@ After building, the release assets are:
 
 > Note: PyInstaller also produces `dist/JARVIS_AI_Agent.exe` as the build output before packaging the release folder.
 
-### 📤 Upload Release Assets
-```bash
-python release_upload.py v2.1
-```
-
-This script uses the local `gh` GitHub CLI. If you are not authenticated yet, run:
-```bash
-gh auth login
-```
-
-If you prefer to upload assets manually with `gh`, use:
-```bash
-gh release create v2.1 \
-  dist/JARVIS_Setup_v2.1.exe \
-  dist/JARVIS_Control_Center/JARVIS_Control_Center.exe \
-  dist/JARVIS_Control_Center/START_JARVIS.bat \
-  .env.template \
-  --title "JARVIS Setup v2.1" \
-  --notes "Release build with installer and standalone GUI assets."
-```
-
-> If GitHub rejects large files over 50 MB, consider using Git LFS or uploading the installer EXE outside git.
-
 ### ▶️ Run Directly (Python)
 ```bash
 python jarvis_app.py

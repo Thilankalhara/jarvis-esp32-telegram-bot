@@ -7,8 +7,6 @@
 ---
 
 
-In the EXE
-
 > **Pre-built standalone Windows executable** — no Python installation required!
 
 | File | Description |

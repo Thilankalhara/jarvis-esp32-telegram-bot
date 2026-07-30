@@ -92,10 +92,12 @@ class SettingsDialog(tk.Toplevel):
 
     def _build_form(self):
         env_path = project_root / ".env"
-        curr_env = {}
+        self.curr_env = {}
         if env_path.exists():
             from dotenv import dotenv_values
-            curr_env = dotenv_values(env_path)
+            self.curr_env = dotenv_values(env_path)
+
+        curr_env = self.curr_env
 
         OPENROUTER_MODELS = [
             "google/gemini-2.0-flash-001",
@@ -426,7 +428,7 @@ class SettingsDialog(tk.Toplevel):
             if hasattr(self.parent, "_refresh_config_labels"):
                 self.parent._refresh_config_labels()
             if hasattr(self.parent, "on_settings_saved"):
-                self.parent.on_settings_saved(curr_env, env_dict)
+                self.parent.on_settings_saved(self.curr_env, env_dict)
 
             messagebox.showinfo(
                 "Settings Saved",

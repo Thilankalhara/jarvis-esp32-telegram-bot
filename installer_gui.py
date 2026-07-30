@@ -21,11 +21,27 @@ def _is_file_locked(path: Path) -> bool:
     try:
         if not path.exists():
             return False
-        with open(path, 'a', buffering=0):
+        with open(path, 'a+b'):
             pass
         return False
-    except Exception:
+    except PermissionError:
         return True
+    except OSError:
+        return True
+
+
+def _terminate_running_process(exe_name: str) -> bool:
+    try:
+        subprocess.run(
+            ["taskkill", "/IM", exe_name, "/F"],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return True
+    except Exception:
+        return False
+
 
 class SetupWizard(tk.Tk):
     def __init__(self):
@@ -126,8 +142,22 @@ class SetupWizard(tk.Tk):
 
                 exe_path = target_dir / "JARVIS_Control_Center.exe"
                 if exe_path.exists() and _is_file_locked(exe_path):
-                    self.after(0, self._on_error, "Target executable is locked by a running process. Close J.A.R.V.I.S. and retry the install.")
-                    return
+                    user_choice = messagebox.askyesno(
+                        "J.A.R.V.I.S. Is Running",
+                        "A running J.A.R.V.I.S. executable was detected. Close it now and retry the install?",
+                    )
+                    if user_choice:
+                        if _terminate_running_process(exe_path.name):
+                            time.sleep(1)
+                            if exe_path.exists() and _is_file_locked(exe_path):
+                                self.after(0, self._on_error, "J.A.R.V.I.S. is still locked after closing. Please close it manually and retry.")
+                                return
+                        else:
+                            self.after(0, self._on_error, "Unable to terminate the running J.A.R.V.I.S. process. Close it manually and retry the install.")
+                            return
+                    else:
+                        self.after(0, self._on_error, "Target executable is locked by a running process. Close J.A.R.V.I.S. and retry the install.")
+                        return
 
                 # If the folder exists, remove stale files before extracting
                 if target_dir.exists() and any(target_dir.iterdir()):

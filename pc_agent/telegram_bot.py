@@ -322,10 +322,22 @@ async def close_all_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     failed.append((pid, r.stderr.strip()))
             except Exception as e:
                 failed.append((pid, str(type(e).__name__)))
-
         msg = ''
         if killed:
-            msg += f"✅ Closed PIDs: {killed}.\n"
+            # Build friendly info for killed processes
+            killed_info = []
+            for pinfo in procs:
+                if pinfo['id'] in killed:
+                    name = pinfo.get('name') or '<unknown>'
+                    title = pinfo.get('title') or ''
+                    killed_info.append(f"{pinfo['id']} ({name}{': ' + title if title else ''})")
+            msg += f"✅ Closed: {', '.join(killed_info)}.\n"
+            try:
+                spoken = ', '.join([p.get('name') or 'unknown' for p in procs if p.get('id') in killed])
+                if spoken:
+                    system_tools.speak_voice_feedback(f"Closed {spoken} successfully.")
+            except Exception:
+                pass
         if failed:
             msg += f"⚠️ Failed to close: {failed}.\n"
         await update.message.reply_text(msg or "⚠️ No GUI apps were closed.")
@@ -355,7 +367,19 @@ async def close_all_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     msg = ''
     if killed:
-        msg += f"✅ Closed PIDs: {killed}.\n"
+        killed_info = []
+        for p in matches:
+            if p['id'] in killed:
+                name = p.get('name') or '<unknown>'
+                title = p.get('title') or ''
+                killed_info.append(f"{p['id']} ({name}{': ' + title if title else ''})")
+        msg += f"✅ Closed: {', '.join(killed_info)}.\n"
+        try:
+            spoken = ', '.join([p.get('name') or 'unknown' for p in matches if p.get('id') in killed])
+            if spoken:
+                system_tools.speak_voice_feedback(f"Closed {spoken} successfully.")
+        except Exception:
+            pass
     if failed:
         msg += f"⚠️ Failed to close: {failed}.\n"
     await update.message.reply_text(msg or f"⚠️ No processes were closed for pattern `{pattern}`.", parse_mode="Markdown")
@@ -392,6 +416,21 @@ async def wake_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "send `/unlock <pc_password>` to automatically type the password and unlock your lockscreen."
             )
             await update.message.reply_text(msg, parse_mode="Markdown")
+            # Speak greeting on wake so the user hears the PC is awake
+            try:
+                user_name = pcc.get_user_name()
+                system_tools.speak_voice_feedback(f"Hello {user_name}, I am awake.")
+                # Also schedule a delayed retry in case audio subsystem isn't ready yet
+                def _delayed_speak(name=user_name):
+                    try:
+                        time.sleep(12)
+                        system_tools.speak_voice_feedback(f"Hello {name}, I am awake.")
+                    except Exception:
+                        pass
+                t = threading.Thread(target=_delayed_speak, daemon=True)
+                t.start()
+            except Exception:
+                pass
             return
     except Exception:
         pass
@@ -517,6 +556,32 @@ async def set_brightness_command(update: Update, context: ContextTypes.DEFAULT_T
     except Exception as e:
         await update.message.reply_text(f"❌ Error: {type(e).__name__}")
 
+
+async def hibernate_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Hibernate the PC. Usage: /hibernate confirm"""
+    chat_id = update.effective_chat.id
+    if not is_authenticated(chat_id):
+        await prompt_password(update)
+        return
+
+    args = context.args or []
+    if not args or args[0].strip().lower() != 'confirm':
+        await update.message.reply_text("⚠️ This will hibernate the PC. To proceed, send `/hibernate confirm`.", parse_mode="Markdown")
+        return
+
+    await update.message.reply_text("✅ Hibernating PC.")
+    try:
+        # Speak the same text so auditory and chat outputs match
+        system_tools.speak_voice_feedback("Hibernating PC")
+    except Exception:
+        pass
+    # Execute the hibernate action (non-blocking)
+    try:
+        system_tools.power_control('hibernate')
+    except Exception as e:
+        logger.exception('Failed to hibernate')
+        await update.message.reply_text(f"❌ Failed to hibernate: {type(e).__name__}")
+
 async def unlock_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Remotely type Windows login password to unlock lockscreen after Wake-on-LAN."""
     if not is_authenticated(update.effective_chat.id):
@@ -603,10 +668,33 @@ async def close_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # If numeric, treat as PID
         if target.isdigit():
             pid = int(target)
+            # Try to get process name/title before killing so we can report a friendly name
+            proc_name = None
+            proc_title = None
+            try:
+                ps_cmd = f"Get-Process -Id {pid} | Select-Object ProcessName,MainWindowTitle | ConvertTo-Json -Compress"
+                pinfo = subprocess.run(["powershell", "-NoProfile", "-Command", ps_cmd], capture_output=True, text=True, timeout=5)
+                if pinfo.stdout:
+                    try:
+                        infoj = json.loads(pinfo.stdout)
+                        if isinstance(infoj, dict):
+                            proc_name = infoj.get('ProcessName')
+                            proc_title = infoj.get('MainWindowTitle')
+                    except Exception:
+                        pass
+            except Exception:
+                proc_name = None
+                proc_title = None
+
             res = subprocess.run(["taskkill", "/PID", str(pid), "/F"], capture_output=True, text=True)
             if res.returncode == 0:
-                await update.message.reply_text(f"✅ Closed PID `{pid}` successfully.", parse_mode="Markdown")
-                system_tools.speak_voice_feedback(f"Closed process {pid} successfully.")
+                display = proc_name or str(pid)
+                title_part = f": {proc_title}" if proc_title else ""
+                await update.message.reply_text(f"✅ Closed PID `{pid}` ({display}{title_part}) successfully.", parse_mode="Markdown")
+                try:
+                    system_tools.speak_voice_feedback(f"Closed {display} successfully.")
+                except Exception:
+                    pass
                 return
 
         # Try image-name kill first (add .exe if missing)
@@ -630,14 +718,23 @@ async def close_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "$out = foreach($proc in $p){$cmd = ($c | Where-Object { $_.ProcessId -eq $proc.Id }).CommandLine; [PSCustomObject]@{Id=$proc.Id;Name=$proc.ProcessName;MainWindowTitle=$proc.MainWindowTitle;CommandLine=$cmd}};"
                 "$out | ConvertTo-Json -Compress"
             )
-                try:
-                    p = subprocess.run(["powershell", "-NoProfile", "-Command", ps_procs_cmd], capture_output=True, text=True, timeout=20)
-                except subprocess.TimeoutExpired:
-                    logger.warning("Process search timed out, retrying with a smaller Get-Process query")
-                    ps_procs_cmd = (
-                        "Get-Process | Select-Object Id,ProcessName,MainWindowTitle | ConvertTo-Json -Compress"
-                    )
-                    p = subprocess.run(["powershell", "-NoProfile", "-Command", ps_procs_cmd], capture_output=True, text=True, timeout=10)
+            try:
+                p = subprocess.run(["powershell", "-NoProfile", "-Command", ps_procs_cmd], capture_output=True, text=True, timeout=20)
+            except subprocess.TimeoutExpired:
+                logger.warning("Process search timed out, retrying with a smaller Get-Process query")
+                ps_procs_cmd = (
+                    "Get-Process | Select-Object Id,ProcessName,MainWindowTitle | ConvertTo-Json -Compress"
+                )
+                p = subprocess.run(["powershell", "-NoProfile", "-Command", ps_procs_cmd], capture_output=True, text=True, timeout=10)
+
+            procs_json = p.stdout.strip()
+            import json, difflib
+            candidates = []
+            if procs_json:
+                data = json.loads(procs_json)
+                if isinstance(data, dict):
+                    data = [data]
+                for item in data:
                     name = (item.get('Name') or '')
                     mid = int(item.get('Id') or 0)
                     title = item.get('MainWindowTitle') or ''
@@ -675,21 +772,33 @@ async def close_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             title_matches = [c for c in matches if (c.get('title') or '').strip() and target_lower in (c.get('title') or '').lower()]
             if title_matches:
                 killed = []
+                killed_info = []
                 failed = []
                 for c in title_matches:
                     pid = c.get('id')
                     try:
                         r = subprocess.run(["taskkill", "/PID", str(pid), "/F"], capture_output=True, text=True)
+                        name = c.get('name') or '<unknown>'
+                        title = c.get('title') or ''
                         if r.returncode == 0:
                             killed.append(pid)
+                            killed_info.append(f"{pid} ({name}{': ' + title if title else ''})")
                         else:
                             failed.append((pid, r.stderr.strip()))
                     except Exception as e:
                         failed.append((pid, str(type(e).__name__)))
                 msg = ''
-                if killed:
-                    msg += f"✅ Closed by window-title match: {killed}.\n"
-                    system_tools.speak_voice_feedback(f"Closed {len(killed)} process by window title match.")
+                if killed_info:
+                    # Report friendly names instead of raw PID list
+                    msg += f"✅ Closed by window-title match: {', '.join(killed_info)}.\n"
+                    try:
+                        spoken = ', '.join([f"{c.get('name') or 'unknown'}" for c in title_matches if c.get('id') in killed])
+                        if spoken:
+                            system_tools.speak_voice_feedback(f"Closed {spoken} successfully.")
+                        else:
+                            system_tools.speak_voice_feedback(f"Closed {len(killed)} processes successfully.")
+                    except Exception:
+                        system_tools.speak_voice_feedback(f"Closed {len(killed)} processes successfully.")
                 if failed:
                     msg += f"⚠️ Failed to close: {failed}.\n"
                 await update.message.reply_text(msg or f"⚠️ Could not close processes matching window title '{target}'.")
@@ -747,7 +856,12 @@ async def close_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     try:
                         r = subprocess.run(["taskkill", "/PID", str(pid), "/F"], capture_output=True, text=True)
                         if r.returncode == 0:
+                            name = best_candidate.get('name') or str(pid)
                             await update.message.reply_text(f"✅ Closed PID `{pid}` (`{best_candidate.get('name')}`) — fuzzy score {best_score:.2f}", parse_mode="Markdown")
+                            try:
+                                system_tools.speak_voice_feedback(f"Closed {name} successfully.")
+                            except Exception:
+                                pass
                             return
                         else:
                             await update.message.reply_text(f"⚠️ Attempted to close PID `{pid}` but failed: {r.stderr.strip()}", parse_mode="Markdown")
@@ -846,6 +960,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.args = [master_vol_match.group(1)]
         await set_master_volume_command(update, context)
         return
+
+    # Intercept wake phrases: allow natural-language like "wake up", "get alive", "turn on the pc"
+    wake_match = re.search(r"\b(?:wake(?:\s*up)?|get\s+alive|bring\s+me\s+alive|turn\s+on\b)\b", user_text, re.IGNORECASE)
+    if wake_match:
+        logger.info("Intercepted wake intent: %s", user_text)
+        context.args = []
+        await wake_command(update, context)
+        return
     if brightness_match:
         context.args = [brightness_match.group(1)]
         await set_brightness_command(update, context)
@@ -893,6 +1015,44 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             with open(media["path"], "rb") as f:
                 await update.message.reply_document(document=f, caption="📄 Generated Document")
 
+def _convert_audio_to_wav(audio_path: Path) -> Path | None:
+    """Convert Telegram-style audio to WAV so SpeechRecognition can process it."""
+    if audio_path.suffix.lower() == ".wav":
+        return audio_path
+
+    try:
+        from imageio_ffmpeg import get_ffmpeg_exe
+
+        ffmpeg_path = get_ffmpeg_exe()
+        if not ffmpeg_path:
+            return None
+
+        wav_path = audio_path.with_suffix(".wav")
+        subprocess.run(
+            [
+                ffmpeg_path,
+                "-y",
+                "-i",
+                str(audio_path),
+                "-vn",
+                "-acodec",
+                "pcm_s16le",
+                "-ar",
+                "16000",
+                "-ac",
+                "1",
+                str(wav_path),
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return wav_path
+    except Exception as exc:
+        logger.warning("Could not convert audio to WAV: %s", exc)
+        return None
+
+
 async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_authenticated(update.effective_chat.id):
         await prompt_password(update)
@@ -913,27 +1073,33 @@ async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     transcribed = None
-    # Try Whisper if available
     try:
-        import whisper
-        await update.message.reply_text("🔤 Transcribing with Whisper...")
-        model = whisper.load_model("small")
-        res = model.transcribe(str(tmp_path))
-        transcribed = res.get('text', '').strip()
-    except Exception:
-        # Try SpeechRecognition with pocketsphinx
+        import speech_recognition as sr
+        wav_path = _convert_audio_to_wav(tmp_path)
+        if not wav_path or not wav_path.exists():
+            raise RuntimeError("Could not create a WAV file for transcription")
+
+        r = sr.Recognizer()
+        with sr.AudioFile(str(wav_path)) as source:
+            audio = r.record(source)
+
         try:
-            import speech_recognition as sr
-            await update.message.reply_text("🔤 Transcribing with Sphinx...")
-            r = sr.Recognizer()
-            with sr.AudioFile(str(tmp_path)) as source:
-                audio = r.record(source)
+            transcribed = r.recognize_google(audio)
+        except Exception:
             try:
                 transcribed = r.recognize_sphinx(audio)
-            except Exception:
+            except Exception as exc:
+                logger.warning("SpeechRecognition transcription failed: %s", exc)
                 transcribed = None
-        except Exception:
-            transcribed = None
+
+        if wav_path != tmp_path:
+            try:
+                wav_path.unlink(missing_ok=True)
+            except Exception:
+                pass
+    except Exception as exc:
+        logger.warning("SpeechRecognition path failed: %s", exc)
+        transcribed = None
 
     # Clean up file
     try:
@@ -989,6 +1155,13 @@ async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.args = [master_vol_match.group(1)]
         await set_master_volume_command(update, context)
         return
+
+    # Intercept wake phrases in transcribed voice
+    wake_match = re.search(r"\b(?:wake(?:\s*up)?|get\s+alive|bring\s+me\s+alive|turn\s+on)\b", user_text, re.IGNORECASE)
+    if wake_match:
+        context.args = []
+        await wake_command(update, context)
+        return
     if brightness_match:
         context.args = [brightness_match.group(1)]
         await set_brightness_command(update, context)
@@ -1042,6 +1215,7 @@ def run_telegram_bot():
     app.add_handler(CommandHandler("wake", wake_command))
     app.add_handler(CommandHandler("unlock", unlock_command))
     app.add_handler(CommandHandler("close", close_command))
+    app.add_handler(CommandHandler("hibernate", hibernate_command))
     app.add_handler(CommandHandler("set_volume", set_volume_command))
     app.add_handler(CommandHandler("set_master_volume", set_master_volume_command))
     app.add_handler(CommandHandler("set_brightness", set_brightness_command))
@@ -1086,6 +1260,7 @@ def setup_bot_handlers(app):
     app.add_handler(CommandHandler("wake", wake_command))
     app.add_handler(CommandHandler("unlock", unlock_command))
     app.add_handler(CommandHandler("close", close_command))
+    app.add_handler(CommandHandler("hibernate", hibernate_command))
     app.add_handler(CommandHandler("set_volume", set_volume_command))
     app.add_handler(CommandHandler("set_master_volume", set_master_volume_command))
     app.add_handler(CommandHandler("set_brightness", set_brightness_command))

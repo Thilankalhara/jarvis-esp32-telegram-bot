@@ -356,6 +356,14 @@ def power_control(action: str) -> str:
                 subprocess.run("rundll32.exe powrprof.dll,SetSuspendState 0,1,0", shell=True)
                 announce_tool_completion("power_control", action)
                 return "PC put to sleep."
+            elif action == "hibernate":
+                # Use the standard Windows hibernate command. Requires hibernation enabled.
+                try:
+                    subprocess.run("shutdown /h", shell=True)
+                    announce_tool_completion("power_control", action)
+                    return "PC is hibernating."
+                except Exception as e:
+                    return f"Error attempting to hibernate: {str(e)}"
             elif action == "shutdown":
                 subprocess.run("shutdown /s /t 10", shell=True)
                 announce_tool_completion("power_control", action)

@@ -6,6 +6,17 @@
 
 ---
 
+## 🆕 Recent Changes (2026-07-30)
+
+- Added local voice transcription improvements (reliable OGG→WAV conversion and SpeechRecognition fallbacks).
+- Friendly process-close feedback: spoken and Telegram replies now include application names/titles instead of raw PIDs where available.
+- New `/hibernate` command — agent replies and speaks the same confirmation phrase when hibernating the PC.
+- Wake behaviour: when triggered (text or voice), agent speaks: "Hello {USER_NAME}, I am awake." and sends the same reply.
+- Built new installer: `dist/JARVIS_Setup_v2.1.exe` (created by `create_installer.py`).
+
+Note: small PowerShell enumeration fixes and process-title extraction are still being refined; see Troubleshooting below.
+
+
 ## 💾 Download / Run the EXE
 
 > **Pre-built standalone Windows executable** — no Python installation required!

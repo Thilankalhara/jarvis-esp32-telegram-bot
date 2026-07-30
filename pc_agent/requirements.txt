@@ -1,3 +1,5 @@
+# Python dependencies for the J.A.R.V.I.S. PC agent.
+# See README.md for setup and ESP32 Arduino upload instructions.
 openai>=1.0.0
 python-telegram-bot>=20.0
 pyautogui>=0.9.54

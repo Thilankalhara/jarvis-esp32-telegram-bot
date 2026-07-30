@@ -1,7 +1,7 @@
 #include <WiFi.h>
 
-const char* ssid = ""; // 2.4GHz only
-const char* password = "";
+const char* ssid = "YOUR_WIFI_SSID"; // 2.4GHz only
+const char* password = "YOUR_WIFI_PASSWORD";
 
 WiFiServer server(80);
 
@@ -36,7 +36,7 @@ void loop() {
     while (client.connected() && client.available()) {
       char c = client.read();
       request += c;
-      if (c == '\n') break; // just need the first line
+      if (c == '\n') break; 
     }
 
     client.println("HTTP/1.1 200 OK");

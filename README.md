@@ -19,9 +19,31 @@
 - GitHub release page: https://github.com/Thilankalhara/jarvis-esp32-telegram-bot/releases
 - After publishing a release, download these assets from the release page:
   - `JARVIS_Control_Center.exe`
+  - `JARVIS_Setup_v2.1.exe`
   - `START_JARVIS.bat`
+  - `.env.template`
 
 > Note: the direct asset URLs only work after a release is published with those files attached. If you haven’t created a release yet, use the release page link above and upload the assets there.
+
+### 📦 How to Download the Installer
+1. Open the GitHub release page above.
+2. Select the latest release entry.
+3. Download `JARVIS_Setup_v2.1.exe` from the list of attached assets.
+4. Run the installer and follow the setup prompts.
+5. Launch `JARVIS_Control_Center.exe` from the installed application folder or the Windows Start Menu.
+
+### 🧩 If You Only Want the Standalone GUI
+Download these instead:
+- `JARVIS_Control_Center.exe`
+- `START_JARVIS.bat`
+- `.env.template`
+
+Then:
+1. Place them in the same folder.
+2. Copy `.env.template` to `.env` and edit it.
+3. Run `START_JARVIS.bat` or `JARVIS_Control_Center.exe` directly.
+
+> If the release asset is not available, publish a new release and upload the built files as assets. For large files over 50 MB, GitHub may recommend Git LFS.
 
 ### 🔨 Build EXE from Source
 ```bash
@@ -48,6 +70,19 @@ This script uses the local `gh` GitHub CLI. If you are not authenticated yet, ru
 ```bash
 gh auth login
 ```
+
+If you prefer to upload assets manually with `gh`, use:
+```bash
+gh release create v2.1 \
+  dist/JARVIS_Setup_v2.1.exe \
+  dist/JARVIS_Control_Center/JARVIS_Control_Center.exe \
+  dist/JARVIS_Control_Center/START_JARVIS.bat \
+  .env.template \
+  --title "JARVIS Setup v2.1" \
+  --notes "Release build with installer and standalone GUI assets."
+```
+
+> If GitHub rejects large files over 50 MB, consider using Git LFS or uploading the installer EXE outside git.
 
 ### ▶️ Run Directly (Python)
 ```bash
@@ -91,10 +126,21 @@ python jarvis_app.py
 ---
 
 ### 2️⃣ ESP32 Hardware Setup (Wake-on-LAN Node)
-1. Open `esp32_firmware/src/main.cpp`.
-2. Update your home **Wi-Fi SSID, Password, and your PC's MAC Address** (See [esp32_firmware/README_HARDWARE.md](file:///c:/Users/HP/OneDrive/Desktop/Esp32%20automation/esp32_firmware/README_HARDWARE.md) for how to find MAC & enable BIOS WoL).
-3. Upload firmware to ESP32 using Arduino IDE or PlatformIO.
-4. Keep the ESP32 powered near your router.
+1. Open `esp32_firmware/ESP32_server.ino` in Arduino IDE.
+2. Install the ESP32 board support package in Arduino IDE:
+   - Open **Tools > Board > Boards Manager**
+   - Search for `esp32` and install the package by Espressif Systems
+3. Update your home Wi-Fi credentials in the sketch:
+   ```cpp
+   const char* ssid = "YOUR_WIFI_SSID"; // 2.4GHz only
+   const char* password = "YOUR_WIFI_PASSWORD";
+   ```
+4. Select the correct ESP32 board (for example `ESP32 Dev Module`) and COM port.
+5. Upload `ESP32_server.ino` to the board.
+6. Open the Serial Monitor at `115200` baud to confirm the ESP32 connects and prints its IP address.
+7. Keep the ESP32 powered near your router.
+
+If you prefer PlatformIO, you can upload the same sketch from `esp32_firmware/ESP32_server.ino` after installing ESP32 support.
 
 ---
 

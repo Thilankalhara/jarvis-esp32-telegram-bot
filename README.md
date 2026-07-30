@@ -6,16 +6,6 @@
 
 ---
 
-## 🆕 Recent Changes (2026-07-30)
-
-- Added a live `/reloadconfig` command so the Telegram bot reloads `.env` settings without restarting the GUI.
-- Bot auth now invalidates previous sessions automatically when `BOT_PASSWORD` changes.
-- Updated `OPENROUTER_API_KEY` and Telegram token reloading so the bot no longer uses stale credentials after config changes.
-- Installer extraction now detects locked `JARVIS_Control_Center.exe` and cleans stale install folders before extracting.
-- Built new installer: `dist/JARVIS_Setup_v2.1.exe` (created by `create_installer.py`).
-
-Note: small PowerShell enumeration fixes and process-title extraction are still being refined; see Troubleshooting below.
-
 
 In the EXE
 

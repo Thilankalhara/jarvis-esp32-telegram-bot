@@ -37,3 +37,7 @@ We aim to acknowledge reports within 48 hours and respond with a remediation pla
 - Session invalidation when `BOT_PASSWORD` changes.
 - Emergency stop in the GUI that immediately terminates the bot.
 - Installer detects locked `JARVIS_Control_Center.exe` before extraction.
+
+---
+
+© 2026 Thilankalhara. All rights reserved.

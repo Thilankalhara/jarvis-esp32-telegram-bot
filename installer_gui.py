@@ -16,6 +16,17 @@ def get_bundle_dir():
         return Path(sys._MEIPASS)
     return Path(__file__).resolve().parent
 
+
+def _is_file_locked(path: Path) -> bool:
+    try:
+        if not path.exists():
+            return False
+        with open(path, 'a', buffering=0):
+            pass
+        return False
+    except Exception:
+        return True
+
 class SetupWizard(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -113,6 +124,22 @@ class SetupWizard(tk.Tk):
                 target_dir.mkdir(parents=True, exist_ok=True)
                 payload_zip = get_bundle_dir() / "jarvis_app_payload.zip"
 
+                exe_path = target_dir / "JARVIS_Control_Center.exe"
+                if exe_path.exists() and _is_file_locked(exe_path):
+                    self.after(0, self._on_error, "Target executable is locked by a running process. Close J.A.R.V.I.S. and retry the install.")
+                    return
+
+                # If the folder exists, remove stale files before extracting
+                if target_dir.exists() and any(target_dir.iterdir()):
+                    try:
+                        for item in target_dir.iterdir():
+                            if item.is_file():
+                                item.unlink()
+                            else:
+                                shutil.rmtree(item)
+                    except Exception:
+                        pass
+
                 with zipfile.ZipFile(payload_zip, 'r') as zip_ref:
                     zip_ref.extractall(target_dir)
 
@@ -123,7 +150,6 @@ class SetupWizard(tk.Tk):
                     shutil.copy(env_tmpl, env_file)
 
                 # Shortcuts creation
-                exe_path = target_dir / "JARVIS_Control_Center.exe"
                 ico_path = target_dir / "jarvis_icon.ico"
 
                 if self.desktop_shortcut_var.get():

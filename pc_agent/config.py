@@ -1,3 +1,4 @@
+import hashlib
 import os
 import sys
 from pathlib import Path
@@ -55,6 +56,51 @@ def reload_config():
 
 # Initial load
 reload_config()
+
+def get_bot_password_hash() -> str:
+    reload_config()
+    return hashlib.sha256(BOT_PASSWORD.encode("utf-8")).hexdigest() if BOT_PASSWORD else ""
+
+
+def get_telegram_bot_token() -> str:
+    reload_config()
+    return TELEGRAM_BOT_TOKEN
+
+
+def get_openrouter_api_key() -> str:
+    reload_config()
+    return OPENROUTER_API_KEY
+
+
+def get_openrouter_model() -> str:
+    reload_config()
+    return OPENROUTER_MODEL
+
+
+def get_openrouter_base_url() -> str:
+    reload_config()
+    return OPENROUTER_BASE_URL
+
+
+def get_esp32_ip() -> str:
+    reload_config()
+    return ESP32_IP
+
+
+def get_windows_pc_password() -> str:
+    reload_config()
+    return WINDOWS_PC_PASSWORD
+
+
+def get_default_workspace() -> str:
+    reload_config()
+    return DEFAULT_WORKSPACE
+
+
+def get_allowed_telegram_users() -> list[int]:
+    reload_config()
+    return list(ALLOWED_TELEGRAM_USERS)
+
 
 def get_user_name() -> str:
     reload_config()

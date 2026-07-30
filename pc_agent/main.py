@@ -47,11 +47,11 @@ def main():
     print_banner()
 
     pcc.reload_config()
-    if not pcc.OPENROUTER_API_KEY:
+    if not pcc.get_openrouter_api_key():
         print("[!] WARNING: OPENROUTER_API_KEY is not set in `.env`!")
         print("[!] Please set your OpenRouter API key to enable AI automation features.")
 
-    if not pcc.TELEGRAM_BOT_TOKEN:
+    if not pcc.get_telegram_bot_token():
         print("[!] WARNING: TELEGRAM_BOT_TOKEN is not set in `.env`!")
         print("[!] Please create a Telegram bot via @BotFather and paste the token in `.env`.")
 

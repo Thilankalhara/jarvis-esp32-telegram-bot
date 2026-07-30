@@ -422,9 +422,11 @@ class SettingsDialog(tk.Toplevel):
             import pc_agent.config as pcc
             pcc.reload_config()
 
-            # Refresh parent UI labels
+            # Notify parent app that settings changed and refresh labels
             if hasattr(self.parent, "_refresh_config_labels"):
                 self.parent._refresh_config_labels()
+            if hasattr(self.parent, "on_settings_saved"):
+                self.parent.on_settings_saved(curr_env, env_dict)
 
             messagebox.showinfo(
                 "Settings Saved",
@@ -500,7 +502,7 @@ class JarvisApp(tk.Tk):
             import pc_agent.config as pcc
             pcc.reload_config()
             esp_ip = getattr(pcc, "ESP32_IP", "")
-            bot_tok = getattr(pcc, "TELEGRAM_BOT_TOKEN", "")
+            bot_tok = pcc.get_telegram_bot_token()
             if hasattr(self, "lbl_esp_ip"):
                 self.lbl_esp_ip.config(text=f"IP Address:  {esp_ip if esp_ip else 'Not Set'}")
             if hasattr(self, "lbl_bot_name"):
@@ -509,6 +511,54 @@ class JarvisApp(tk.Tk):
                 )
         except Exception:
             pass
+
+    def on_settings_saved(self, previous_env: dict, new_env: dict):
+        """Handle a settings save from the settings dialog."""
+        restart_needed = False
+
+        prev_token = (previous_env.get("TELEGRAM_BOT_TOKEN", "") or "").strip()
+        new_token = (new_env.get("TELEGRAM_BOT_TOKEN", "") or "").strip()
+        prev_api_key = (previous_env.get("OPENROUTER_API_KEY", "") or "").strip()
+        new_api_key = (new_env.get("OPENROUTER_API_KEY", "") or "").strip()
+        prev_password = (previous_env.get("BOT_PASSWORD", "") or "").strip()
+        new_password = (new_env.get("BOT_PASSWORD", "") or "").strip()
+
+        if prev_token != new_token and new_token:
+            restart_needed = True
+            self._log("Config change detected: Telegram token changed. Restarting agent to use new token.")
+
+        if prev_api_key != new_api_key and new_api_key:
+            self._log("Config change detected: OpenRouter API key updated.")
+
+        if prev_password != new_password:
+            self._log("Config change detected: Bot password changed. Previous sessions will be invalidated on next command.")
+
+        # If the agent is currently running and we changed the Telegram token,
+        # restart the bot so the live application uses the new token immediately.
+        if restart_needed and self.bot_thread and self.bot_thread.is_alive():
+            self._stop_agent("Restarting bot due to updated Telegram token.")
+            self.start_agent()
+
+    def _stop_agent(self, reason: str | None = None):
+        if reason:
+            self._log(reason)
+
+        if self.bot_app is not None:
+            try:
+                from pc_agent.telegram_bot import get_stop_event, clear_stop_event
+
+                stop_evt = get_stop_event(self.bot_app)
+                if stop_evt:
+                    stop_evt.set()
+                clear_stop_event(self.bot_app)
+            except Exception:
+                pass
+            self.bot_app = None
+
+        if self.bot_thread and self.bot_thread.is_alive():
+            self.bot_thread.join(timeout=5)
+        self.bot_thread = None
+        self.lbl_agent_status.config(text="●  STOPPED", fg="#ff3366")
 
 
     # ── Styles ──────────────────────────────────────────────────────────
@@ -629,9 +679,10 @@ class JarvisApp(tk.Tk):
         inner_agent = tk.Frame(agent_card, bg="#0e1726")
         inner_agent.pack(fill="x", padx=14, pady=10)
 
+        bot_token = getattr(__import__('pc_agent.config', fromlist=['get_telegram_bot_token']), 'get_telegram_bot_token')()
         self.lbl_bot_name = tk.Label(
             inner_agent,
-            text=f"Telegram Bot:  {'Configured ✓' if TELEGRAM_BOT_TOKEN else 'No Token ✗'}",
+            text=f"Telegram Bot:  {'Configured ✓' if bot_token else 'No Token ✗'}",
             bg="#0e1726", fg="#8ab4cc", font=("Consolas", 9), anchor="w"
         )
         self.lbl_bot_name.pack(anchor="w")
@@ -739,7 +790,7 @@ class JarvisApp(tk.Tk):
 
         import pc_agent.config as pcc
         pcc.reload_config()
-        bot_token = getattr(pcc, "TELEGRAM_BOT_TOKEN", "")
+        bot_token = pcc.get_telegram_bot_token()
         if not bot_token or bot_token == "YOUR_TELEGRAM_BOT_TOKEN_HERE":
             messagebox.showerror(
                 "Error",

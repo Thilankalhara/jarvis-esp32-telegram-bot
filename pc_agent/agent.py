@@ -268,6 +268,10 @@ class JarvisAgent:
         self.model = _pcc.OPENROUTER_MODEL
         if self.api_key:
             self.client.api_key = self.api_key
+        try:
+            self.client.base_url = _pcc.OPENROUTER_BASE_URL
+        except Exception:
+            pass
 
         if not self.api_key or self.api_key == "dummy_key_until_set":
             return {

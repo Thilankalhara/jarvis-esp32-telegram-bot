@@ -32,28 +32,53 @@ _AUTH_FILE = project_root / "authenticated_chats.json"
 def _load_auth() -> set:
     """Load saved authenticated chat IDs from disk."""
     try:
+        pcc.reload_config()
+        current_hash = pcc.get_bot_password_hash()
         if _AUTH_FILE.exists():
             data = json.loads(_AUTH_FILE.read_text(encoding="utf-8"))
+            saved_hash = data.get("password_hash", "")
+            if not saved_hash or saved_hash != current_hash:
+                logger.info("Bot password changed or auth metadata missing; clearing persisted Telegram auth sessions.")
+                _save_auth(set(), password_hash=current_hash)
+                return set()
             return set(data.get("chats", []))
     except Exception:
         pass
     return set()
 
-def _save_auth(chats: set):
+
+def _refresh_auth_state() -> set:
+    """Refresh in-memory auth state from disk and invalidate when the password hash changes."""
+    global authenticated_chats
+    authenticated_chats = _load_auth()
+    return authenticated_chats
+
+
+def _save_auth(chats: set, password_hash: str | None = None):
     """Persist authenticated chat IDs to disk."""
     try:
+        if password_hash is None:
+            password_hash = pcc.get_bot_password_hash()
         _AUTH_FILE.write_text(
-            json.dumps({"chats": list(chats)}, indent=2),
+            json.dumps({"password_hash": password_hash, "chats": list(chats)}, indent=2),
             encoding="utf-8"
         )
     except Exception as e:
         logger.warning(f"Could not save auth file: {e}")
+
+
+def invalidate_auth_sessions() -> None:
+    """Forcefully clear current authenticated chat sessions."""
+    global authenticated_chats
+    authenticated_chats = set()
+    _save_auth(authenticated_chats, password_hash=pcc.get_bot_password_hash())
 
 # Load on module startup
 authenticated_chats: set = _load_auth()
 
 def is_authenticated(chat_id: int) -> bool:
     """Check if the Telegram chat session is unlocked with password."""
+    _refresh_auth_state()
     return chat_id in authenticated_chats
 
 async def prompt_password(update: Update):
@@ -84,7 +109,7 @@ async def login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_name = pcc.get_user_name()
     if input_pass == current_password or input_pass == f"/login {current_password}":
         authenticated_chats.add(chat_id)
-        _save_auth(authenticated_chats)
+        _save_auth(authenticated_chats, password_hash=pcc.get_bot_password_hash())
         msg = (
             "🔓 *ACCESS GRANTED!*\n\n"
             f"Welcome back, {user_name}. Your account is now authenticated.\n"
@@ -102,6 +127,47 @@ async def logout_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         authenticated_chats.remove(chat_id)
         _save_auth(authenticated_chats)
     await update.message.reply_text("🔒 *Session Locked.* Use `/login <password>` or send your password to regain access.", parse_mode="Markdown")
+
+
+async def reload_config_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Reload .env configuration and invalidate stale auth if needed."""
+    chat_id = update.effective_chat.id
+    if not is_authenticated(chat_id):
+        await prompt_password(update)
+        return
+
+    old_api_key = pcc.OPENROUTER_API_KEY
+    old_token = pcc.TELEGRAM_BOT_TOKEN
+    old_password_hash = pcc.get_bot_password_hash()
+
+    pcc.reload_config()
+
+    new_api_key = pcc.get_openrouter_api_key()
+    new_token = pcc.get_telegram_bot_token()
+    new_password_hash = pcc.get_bot_password_hash()
+
+    messages = []
+    if old_password_hash != new_password_hash:
+        invalidate_auth_sessions()
+        messages.append("🔐 Bot password changed. All authenticated sessions were invalidated. Please `/login <new_password>`.")
+    else:
+        messages.append("✅ Bot password is unchanged.")
+
+    if old_api_key != new_api_key:
+        messages.append("🔑 OpenRouter API key updated and will be used for new AI requests.")
+    else:
+        messages.append("✅ OpenRouter API key is unchanged.")
+
+    if old_token != new_token:
+        messages.append(
+            "🚨 Telegram token changed. This bot process must be restarted to use the new token. "
+            "If you are using the GUI, reopen the agent or restart the application."
+        )
+    else:
+        messages.append("✅ Telegram bot token is unchanged.")
+
+    await update.message.reply_text("\n".join(messages), parse_mode="Markdown")
+
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
@@ -1196,15 +1262,17 @@ async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(result.get("text", "(no response)"))
 
 def run_telegram_bot():
-    pcc.reload_config()
-    if not pcc.TELEGRAM_BOT_TOKEN or pcc.TELEGRAM_BOT_TOKEN == "YOUR_TELEGRAM_BOT_TOKEN_HERE":
+    token = pcc.get_telegram_bot_token()
+    if not token or token == "YOUR_TELEGRAM_BOT_TOKEN_HERE":
         print("⚠️ Telegram Bot Token is missing! Please set TELEGRAM_BOT_TOKEN in .env file.")
         return
 
-    app = Application.builder().token(pcc.TELEGRAM_BOT_TOKEN).build()
+    app = Application.builder().token(token).build()
 
     app.add_handler(CommandHandler("login", login_command))
     app.add_handler(CommandHandler("logout", logout_command))
+    app.add_handler(CommandHandler("reloadconfig", reload_config_command))
+    app.add_handler(CommandHandler("reload_config", reload_config_command))
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("help", start_command))
     app.add_handler(CommandHandler("status", status_command))
@@ -1242,10 +1310,10 @@ def run_telegram_bot():
 
 def get_application():
     """Create and return the Telegram bot application instance (for GUI integration)."""
-    pcc.reload_config()
-    if not pcc.TELEGRAM_BOT_TOKEN or pcc.TELEGRAM_BOT_TOKEN == "YOUR_TELEGRAM_BOT_TOKEN_HERE":
+    token = pcc.get_telegram_bot_token()
+    if not token or token == "YOUR_TELEGRAM_BOT_TOKEN_HERE":
         return None
-    return Application.builder().token(pcc.TELEGRAM_BOT_TOKEN).build()
+    return Application.builder().token(token).build()
 
 
 def setup_bot_handlers(app):

@@ -8,16 +8,16 @@
 
 ## 🆕 Recent Changes (2026-07-30)
 
-- Added local voice transcription improvements (reliable OGG→WAV conversion and SpeechRecognition fallbacks).
-- Friendly process-close feedback: spoken and Telegram replies now include application names/titles instead of raw PIDs where available.
-- New `/hibernate` command — agent replies and speaks the same confirmation phrase when hibernating the PC.
-- Wake behaviour: when triggered (text or voice), agent speaks: "Hello {USER_NAME}, I am awake." and sends the same reply.
+- Added a live `/reloadconfig` command so the Telegram bot reloads `.env` settings without restarting the GUI.
+- Bot auth now invalidates previous sessions automatically when `BOT_PASSWORD` changes.
+- Updated `OPENROUTER_API_KEY` and Telegram token reloading so the bot no longer uses stale credentials after config changes.
+- Installer extraction now detects locked `JARVIS_Control_Center.exe` and cleans stale install folders before extracting.
 - Built new installer: `dist/JARVIS_Setup_v2.1.exe` (created by `create_installer.py`).
 
 Note: small PowerShell enumeration fixes and process-title extraction are still being refined; see Troubleshooting below.
 
 
-## 💾 Download / Run the EXE
+In the EXE
 
 > **Pre-built standalone Windows executable** — no Python installation required!
 
@@ -190,6 +190,16 @@ Inside that folder:
 - **Emergency Stop**: The EXE Control Center has a red **EMERGENCY STOP** button that instantly kills the agent and shuts down the Telegram bot.
 - **PC Unlock**: After Wake-on-LAN, use `/unlock <windows_password>` to remotely unlock your PC lockscreen.
 - **Allowed Users**: Restrict bot access to specific Telegram User IDs in `.env`.
+
+## 🛡️ Security Contact
+
+For security issues or responsible disclosure, contact:
+
+- **Maintainer:** `Thilankalhara`
+- **Email:** `thilankalhara8@gmail.com`
+- **GitHub:** https://github.com/Thilankalhara
+
+Please do not post secrets or passwords in issue threads. Use the above contact channels for vulnerability reports.
 
 ---
 

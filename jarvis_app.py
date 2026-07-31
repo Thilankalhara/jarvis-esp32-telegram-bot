@@ -704,6 +704,7 @@ class JarvisApp(tk.Tk):
             ("btn_stop",     "⛔  EMERGENCY STOP",  "#ff3366", "#fff", "#cc0033",  self.emergency_stop),
             ("btn_wake",     "⚡  WAKE PC  (WoL)",   "#00f3ff", "#000", "#00c4cc",  self.trigger_wake),
             ("btn_voice",    "🔊  TEST VOICE",        "#7c3aed", "#fff", "#5b21b6",  self.test_voice),
+            ("btn_mute",     "🔇  MUTE VOICE",        "#f59e0b", "#000", "#d97706",  self.toggle_voice_mute),
             ("btn_settings", "⚙️  SETTINGS",          "#ffaa00", "#000", "#cc8800",  self.open_settings),
         ]
 
@@ -766,6 +767,7 @@ class JarvisApp(tk.Tk):
         log_scroll.pack(side="right", fill="y")
         self.log_text.pack(side="left", fill="both", expand=True, padx=6, pady=6)
 
+        self._sync_voice_mute_button()
         self._log("System Control Center initialized. Ready for operations.")
 
     # ── Logging helpers ──────────────────────────────────────────────────
@@ -904,11 +906,27 @@ class JarvisApp(tk.Tk):
 
     # ── Voice test ───────────────────────────────────────────────────────
 
+    def _sync_voice_mute_button(self):
+        if hasattr(self, "btn_mute"):
+            muted = system_tools.is_voice_feedback_muted()
+            self.btn_mute.config(
+                text="🔇  VOICE MUTED" if muted else "🔊  MUTE VOICE",
+                bg="#f59e0b" if not muted else "#7c3aed",
+                fg="#000" if not muted else "#fff",
+                activebackground="#d97706" if not muted else "#5b21b6",
+                activeforeground="#000" if not muted else "#fff",
+            )
+
     def test_voice(self):
         self._log("Testing Text-to-Speech voice synthesis…")
         system_tools.speak_voice_feedback(
             "Welcome sir, I am JARVIS. All PC automation tools are operational."
         )
+
+    def toggle_voice_mute(self):
+        muted = system_tools.toggle_voice_feedback_mute()
+        self._sync_voice_mute_button()
+        self._log("Voice feedback muted." if muted else "Voice feedback unmuted.")
 
     # ── Health Monitor (Tkinter-safe via after()) ─────────────────────────
 

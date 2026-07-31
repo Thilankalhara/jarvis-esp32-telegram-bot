@@ -10,10 +10,29 @@ import pyautogui
 from pathlib import Path
 from pc_agent.config import SCREENSHOTS_DIR
 
+_VOICE_FEEDBACK_MUTED = False
+
+
+def is_voice_feedback_muted() -> bool:
+    """Return whether voice feedback output is currently muted."""
+    return _VOICE_FEEDBACK_MUTED
+
+
+def set_voice_feedback_mute(muted: bool) -> bool:
+    """Set the voice feedback mute state and return the new state."""
+    global _VOICE_FEEDBACK_MUTED
+    _VOICE_FEEDBACK_MUTED = bool(muted)
+    return _VOICE_FEEDBACK_MUTED
+
+
+def toggle_voice_feedback_mute() -> bool:
+    """Toggle the voice feedback mute state and return the new state."""
+    return set_voice_feedback_mute(not is_voice_feedback_muted())
+
 
 def speak_voice_feedback(text: str):
     """Use Windows Text-to-Speech engine to speak feedback out loud on PC speakers."""
-    if not text:
+    if not text or is_voice_feedback_muted():
         return
     try:
         clean_text = text.replace('"', '').replace("'", '').replace('`', '')
@@ -441,18 +460,22 @@ def set_system_volume(percent: int) -> str:
             return "System volume control is supported only on Windows."
 
         try:
-            from ctypes import POINTER, cast
             from comtypes import CLSCTX_ALL
             from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
         except Exception:
             return "Missing dependency: install 'pycaw' and 'comtypes' (pip install pycaw comtypes)."
 
         try:
+            percent = int(percent)
+            if percent < 0 or percent > 100:
+                return "Volume percent must be between 0 and 100."
+        except Exception:
+            return "Invalid percent value. Provide an integer 0-100."
+
+        try:
             devices = AudioUtilities.GetSpeakers()
             volume = devices.EndpointVolume
             val = float(percent) / 100.0
-            if val < 0.0 or val > 1.0:
-                return "Volume percent must be between 0 and 100."
             volume.SetMasterVolumeLevelScalar(val, None)
             return f"System volume set to {percent}%"
         except Exception as e:

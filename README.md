@@ -11,7 +11,8 @@
 
 | File | Description |
 |------|-------------|
-| `JARVIS_Control_Center.exe` | Main GUI application |
+| `JARVIS_Control_Center.exe` | Main GUI application with mute/unmute voice feedback and system control buttons |
+| `JARVIS_Setup_v2.1.exe` | Full Windows installer for the control center and bundled assets |
 | `START_JARVIS.bat` | Recommended launcher (checks `.env` first) |
 | `.env.template` | Copy to `.env` and fill in your credentials |
 
@@ -80,7 +81,9 @@ python jarvis_app.py
 - 📸 **Live Desktop Screenshot & Telemetry**: Monitor desktop live and check CPU/RAM/Battery status.
 - 🔒 **Tailscale Mesh Security**: Zero open ports required; all PC-to-Mobile-to-ESP32 traffic is securely encrypted.
 - 🔊 **Voice Feedback**: J.A.R.V.I.S. speaks confirmation when every task completes ("Welcome sir, I opened calculator").
-- 🖱️ **Graphical Control Center**: Standalone Windows EXE with live ESP32 status, agent monitoring, and emergency stop button.
+- � **Mute / Unmute Voice Feedback**: Toggle spoken confirmations from the desktop control center or via the shared system tools.
+- 🔉 **Windows Volume Control**: Set system/master volume and application volume with the new Windows audio integration (requires `pycaw` and `comtypes`).
+- 🖱️ **Graphical Control Center**: Standalone Windows EXE with live ESP32 status, agent monitoring, emergency stop, and the new mute button.
 
 ---
 
@@ -259,6 +262,7 @@ Esp32 automation - Copy/
 - **Telegram bot not responding**: Verify your `TELEGRAM_BOT_TOKEN` in `.env` and check internet connectivity.
 - **ESP32 not reachable**: Ensure ESP32 and PC are on the same network, and `ESP32_IP` in `.env` is correct.
 - **Voice not working**: Ensure Windows Text-to-Speech voices are installed (Settings > Time & Language > Speech).
+- **Volume commands fail**: Install the Windows audio dependencies with `pip install pycaw comtypes`.
 - **Wake-on-LAN not working**: Enable Wake-on-LAN in BIOS/UEFI and ensure the PC's MAC address is correctly set in `esp32_firmware/src/main.cpp`.
 
 ---

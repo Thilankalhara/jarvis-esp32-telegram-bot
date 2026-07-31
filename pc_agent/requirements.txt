@@ -11,3 +11,5 @@ python-dotenv>=1.0.0
 mss>=9.0.1
 pyinstaller>=6.0.0
 asyncio-mqtt>=0.16.0
+pycaw>=2023.12.2
+comtypes>=1.4.0

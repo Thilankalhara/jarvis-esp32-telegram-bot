@@ -2,10 +2,10 @@
 
 
 a = Analysis(
-    ['C:\\Users\\HP\\OneDrive\\Desktop\\Esp32 automation\\installer_gui.py'],
+    ['D:\\backup project\\My backups\\Esp32 automation Agent\\Esp32 automation\\installer_gui.py'],
     pathex=[],
     binaries=[],
-    datas=[('C:\\Users\\HP\\OneDrive\\Desktop\\Esp32 automation\\dist\\jarvis_app_payload.zip', '.')],
+    datas=[('D:\\backup project\\My backups\\Esp32 automation Agent\\Esp32 automation\\dist\\jarvis_app_payload.zip', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -35,5 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['C:\\Users\\HP\\OneDrive\\Desktop\\Esp32 automation\\jarvis_icon.ico'],
+    icon=['D:\\backup project\\My backups\\Esp32 automation Agent\\Esp32 automation\\jarvis_icon.ico'],
 )

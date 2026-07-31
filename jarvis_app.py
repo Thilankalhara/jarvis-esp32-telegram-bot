@@ -87,6 +87,11 @@ class SettingsDialog(tk.Toplevel):
                 self.iconbitmap(str(icon_path))
             except Exception:
                 pass
+            try:
+                img = tk.PhotoImage(file=str(icon_path))
+                self.iconphoto(True, img)
+            except Exception:
+                pass
 
         self._build_form()
 
@@ -503,7 +508,7 @@ class JarvisApp(tk.Tk):
         try:
             import pc_agent.config as pcc
             pcc.reload_config()
-            esp_ip = getattr(pcc, "ESP32_IP", "")
+            esp_ip = pcc.get_esp32_ip()
             bot_tok = pcc.get_telegram_bot_token()
             if hasattr(self, "lbl_esp_ip"):
                 self.lbl_esp_ip.config(text=f"IP Address:  {esp_ip if esp_ip else 'Not Set'}")
@@ -857,50 +862,70 @@ class JarvisApp(tk.Tk):
 
     def trigger_wake(self):
         """Send WoL magic packet via ESP32 HTTP endpoint."""
-        self._log(f"Sending Wake-on-LAN request to ESP32 at http://{ESP32_IP}/wake …")
+        import pc_agent.config as pcc
+        esp_ip = pcc.get_esp32_ip()
+        self._log(f"Sending Wake-on-LAN request to ESP32 at http://{esp_ip}/wake …")
         self.btn_wake.config(text="⏳  SENDING…", state="disabled", bg="#334455", fg="#fff")
 
-        def _wake():
+        def _set_button(text, bg="#00f3ff", fg="#000", state="normal"):
+            self.after(0, lambda: self.btn_wake.config(text=text, bg=bg, fg=fg, state=state))
+
+        def _probe_root(ip: str) -> bool:
             try:
-                res = requests.get(f"http://{ESP32_IP}/wake", timeout=5)
+                res = requests.get(f"http://{ip}/", timeout=3)
+                return res.status_code == 200
+            except Exception:
+                return False
+
+        def _wake():
+            if not esp_ip:
+                self._log("❌  ESP32 IP is not configured. Please set ESP32_IP in Settings.")
+                _set_button("❌  NO ESP32 IP", "#ff3366", "#fff", "normal")
+                self.after(4000, lambda: self.btn_wake.config(
+                    text="⚡  WAKE PC  (WoL)", bg="#00f3ff", fg="#000", state="normal"
+                ))
+                return
+
+            try:
+                res = requests.get(f"http://{esp_ip}/wake", timeout=5)
                 if res.status_code == 200:
                     self._log("✅  ESP32: WoL Magic Packet sent successfully!")
                     system_tools.speak_voice_feedback("Wake on LAN packet sent.")
-                    self.after(0, lambda: self.btn_wake.config(
-                        text="⚡  WAKE PC  (WoL)", state="normal", bg="#00f3ff", fg="#000"
-                    ))
-                else:
-                    self._log(f"⚠️  ESP32 returned unexpected status: {res.status_code}")
-                    self.after(0, lambda: self.btn_wake.config(
-                        text="⚡  WAKE PC  (WoL)", state="normal", bg="#00f3ff", fg="#000"
-                    ))
+                    _set_button("⚡  WAKE PC  (WoL)", "#00f3ff", "#000")
+                    return
 
-            except requests.exceptions.ConnectTimeout:
-                self._log(
-                    f"⚠️  ESP32 at {ESP32_IP} is UNREACHABLE — connection timed out.\n"
-                    f"           Is the ESP32 powered on and on the same network?"
-                )
-                self.after(0, lambda: self.btn_wake.config(
-                    text="❌  ESP32 TIMEOUT", state="normal", bg="#ff3366", fg="#fff"
-                ))
-                self.after(4000, lambda: self.btn_wake.config(
-                    text="⚡  WAKE PC  (WoL)", bg="#00f3ff", fg="#000"
-                ))
+                self._log(f"⚠️  ESP32 returned unexpected status: {res.status_code}")
+            except requests.exceptions.RequestException as e:
+                self._log(f"❌  Failed to contact ESP32 at {esp_ip}: {e}")
 
-            except requests.exceptions.ConnectionError as e:
-                self._log(f"❌  ESP32 connection error: {e}")
-                self.after(0, lambda: self.btn_wake.config(
-                    text="❌  CONNECTION ERROR", state="normal", bg="#ff3366", fg="#fff"
-                ))
-                self.after(4000, lambda: self.btn_wake.config(
-                    text="⚡  WAKE PC  (WoL)", bg="#00f3ff", fg="#000"
-                ))
+            if _probe_root(esp_ip):
+                self._log(f"ℹ️  ESP32 root page is reachable at {esp_ip}, but /wake may be unavailable.")
+                _set_button("⚡  ESP32 ONLINE", "#00cc66", "#000")
+                return
 
-            except Exception as e:
-                self._log(f"❌  ESP32 WoL request failed: {e}")
-                self.after(0, lambda: self.btn_wake.config(
-                    text="⚡  WAKE PC  (WoL)", state="normal", bg="#00f3ff", fg="#000"
-                ))
+            self._log("🔍  Falling back to network auto-discovery for ESP32...")
+            found_ip = system_tools.auto_discover_esp32_ip()
+            if found_ip and found_ip != esp_ip:
+                self._log(f"✅  Auto-detected ESP32 at {found_ip}. Updating configuration.")
+                env_file = project_root / ".env"
+                if env_file.exists():
+                    import re
+                    content = env_file.read_text(encoding="utf-8")
+                    content = re.sub(r"^ESP32_IP=.*$", f"ESP32_IP={found_ip}", content, flags=re.MULTILINE)
+                    env_file.write_text(content, encoding="utf-8")
+                pcc.reload_config()
+                self.after(0, lambda: self.lbl_esp_ip.config(text=f"IP Address:  {found_ip}"))
+                _set_button("⚡  WAKE PC  (WoL)", "#00f3ff", "#000")
+                return
+
+            self._log(
+                f"❌  ESP32 at {esp_ip} could not be reached. "
+                "Confirm the device is powered on and on the same network."
+            )
+            _set_button("❌  ESP32 UNREACHABLE", "#ff3366", "#fff")
+            self.after(4000, lambda: self.btn_wake.config(
+                text="⚡  WAKE PC  (WoL)", bg="#00f3ff", fg="#000", state="normal"
+            ))
 
         threading.Thread(target=_wake, daemon=True).start()
 
@@ -940,7 +965,7 @@ class JarvisApp(tk.Tk):
         def _check():
             # Read IP dynamically (may have changed in Settings)
             import pc_agent.config as pcc
-            esp_ip = getattr(pcc, "ESP32_IP", "") or ESP32_IP
+            esp_ip = pcc.get_esp32_ip()
 
             # Update IP label
             self.after(0, lambda: self.lbl_esp_ip.config(

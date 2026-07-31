@@ -1,8 +1,12 @@
 # 🤖 J.A.R.V.I.S. - AI Remote PC Assistant & ESP32 Automation
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 > Turn your PC into Tony Stark's J.A.R.V.I.S. Control, automate, wake up, and complete tasks on your home PC from anywhere in the world using AI voice & text commands over Telegram & Tailscale!
 
 > GitHub: https://github.com/Thilankalhara/jarvis-esp32-telegram-bot
+
+> Licensed under the MIT License.
 
 ---
 

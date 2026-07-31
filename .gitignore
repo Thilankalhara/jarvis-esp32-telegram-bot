@@ -26,7 +26,10 @@ calc_check.txt
 
 # Build artifacts
 build/
-dist/
+dist/*
+!dist/README.md
+!dist/JARVIS_Control_Center/
+!dist/JARVIS_Control_Center/README.md
 
 # Local helper tools
 gh.exe

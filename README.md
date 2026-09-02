@@ -28,7 +28,6 @@
   - `START_JARVIS.bat`
   - `.env.template`
 
-> Note: the direct asset URLs only work after a release is published with those files attached. If you haven’t created a release yet, use the release page link above and upload the assets there.
 
 ### 📦 How to Download the Installer
 1. Open the GitHub release page above.
@@ -47,8 +46,6 @@ Then:
 1. Place them in the same folder.
 2. Copy `.env.template` to `.env` and edit it.
 3. Run `START_JARVIS.bat` or `JARVIS_Control_Center.exe` directly.
-
-> If the release asset is not available, publish a new release and upload the built files as assets. For large files over 50 MB, GitHub may recommend Git LFS.
 
 ### 🔨 Build EXE from Source
 ```bash
@@ -105,7 +102,6 @@ python jarvis_app.py
     - **`BOT_PASSWORD`**: Set a password to secure your bot (default: `jarvis123`).
     - **`ESP32_IP`**: Your ESP32's local or Tailscale IP address.
 
-> 🔐 Important: Do not commit `.env` or any file containing secret keys or passwords. Only `.env.template` should be stored in source control.
 
 ---
 

@@ -139,7 +139,7 @@ If you prefer PlatformIO, you can upload the same sketch from `esp32_firmware/ES
 ### 4️⃣ Autostart on Windows Boot (Optional)
 To make your PC Agent start automatically whenever your PC wakes up or turns on:
 1. Press `Win + R`, type `shell:startup`, and press Enter.
-2. Create a shortcut to run:
+2. Create a shortcut to run(Example):
     ```cmd
     pythonw.exe C:\Users\HP\OneDrive\Desktop\Esp32 automation\pc_agent\main.py
     ```

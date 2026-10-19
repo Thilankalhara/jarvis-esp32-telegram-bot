@@ -1,5 +1,15 @@
 # 🤖 J.A.R.V.I.S. - AI Remote PC Assistant & ESP32 Automation
 
+
+<p align="center">
+  <img src="assets/jarvis-demo.gif" alt="Animated J.A.R.V.I.S. AI Remote PC Assistant HUD demo" width="100%">
+</p>
+
+<p align="center">
+  <strong>AI-powered remote PC control • Telegram commands • ESP32 Wake-on-LAN • Live system telemetry</strong>
+</p>
+
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > Turn your PC into Tony Stark's J.A.R.V.I.S. Control, automate, wake up, and complete tasks on your home PC from anywhere in the world using AI voice & text commands over Telegram & Tailscale!

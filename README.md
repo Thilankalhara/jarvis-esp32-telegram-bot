@@ -1,5 +1,7 @@
 # 🤖 J.A.R.V.I.S. - AI Remote PC Assistant & ESP32 Automation
-
+<p align="center">
+  <img src="assets/jarvis-img.png" alt="Animated J.A.R.V.I.S. AI Remote PC Assistant HUD demo" width="100%">
+</p>
 
 <p align="center">
   <img src="assets/jarvis-demo.gif" alt="Animated J.A.R.V.I.S. AI Remote PC Assistant HUD demo" width="100%">

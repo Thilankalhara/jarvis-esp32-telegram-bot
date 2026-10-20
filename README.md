@@ -3,6 +3,8 @@
   <img src="assets/jarvis-img.png" alt="Animated J.A.R.V.I.S. AI Remote PC Assistant HUD demo" width="100%">
 </p>
 
+---
+
 <p align="center">
   <img src="assets/jarvis-demo.gif" alt="Animated J.A.R.V.I.S. AI Remote PC Assistant HUD demo" width="100%">
 </p>
@@ -122,7 +124,8 @@ python jarvis_app.py
 2. Install the ESP32 board support package in Arduino IDE:
    - Open **Tools > Board > Boards Manager**
    - Search for `esp32` and install the package by Espressif Systems
-3. Update your home Wi-Fi credentials in the sketch:
+3. Update your home Wi-Fi credentials in the sketch (jarvis-esp32-telegram-bot/
+esp32_firmware/ESP32_server.ino):
    ```cpp
    const char* ssid = "YOUR_WIFI_SSID"; // 2.4GHz only
    const char* password = "YOUR_WIFI_PASSWORD";
